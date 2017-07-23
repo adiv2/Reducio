@@ -5,7 +5,7 @@ package org.openunicorn.reducio;
 
 import android.Manifest;
 import android.content.Context;
-import android.content.ContextWrapper;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.os.Environment;
@@ -20,19 +20,21 @@ import com.developers.imagezipper.ImageZipper;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity
 {
+  public static final String COMPRESSED_LIST = "compressedList";
   @Override
   protected void onCreate(Bundle savedInstanceState)
   {
     getStoragePermission();
     super.onCreate(savedInstanceState);
     setContentView(R.layout.activity_main);
-    File[] imageList = readImages();
-    String sdcardPath = imageList[0].toString();
+    //File[] imageList = newImages();
+    //String sdcardPath = imageList[0].toString();
     TextView textView = (TextView) findViewById(R.id.textView1);
-    textView.setText(sdcardPath);
+    //textView.setText(sdcardPath);
     encode();
   }
 
@@ -51,7 +53,7 @@ public class MainActivity extends AppCompatActivity
     }
   }
 
-  protected File[] readImages()
+  protected File readImages()
   {
     File sdcard = Environment.getExternalStorageDirectory();
     String cameraPath = sdcard.getAbsolutePath();
@@ -69,8 +71,61 @@ public class MainActivity extends AppCompatActivity
       }
     }
     File cameraFolder = new File(cameraPath);
-    File[] images = cameraFolder.listFiles();
-    return images;
+    //File[] images = cameraFolder.listFiles();
+    return cameraFolder;
+  }
+
+  protected File[] newImages()
+  {
+    File imageList = readImages();
+    String[] imageListNames = imageList.list();
+    String oldImages = "";
+    SharedPreferences sharedPreferences = getSharedPreferences(COMPRESSED_LIST, Context.MODE_PRIVATE);
+    SharedPreferences.Editor editor = sharedPreferences.edit();
+    oldImages = sharedPreferences.getString("imageList","empty");
+    TextView textView1 = (TextView) findViewById(R.id.textView1);
+    textView1.setText(oldImages);
+    String[] oldImagesArray = oldImages.split(",");
+    ArrayList<String> oldImagesList = new ArrayList<>();
+    ArrayList<String> newImagesList = new ArrayList<>();
+    if(!oldImages.equalsIgnoreCase("empty"))
+    {
+      for (int i = 0; i < oldImagesArray.length; i++) {
+        oldImagesList.add(oldImagesArray[i]);
+      }
+    }
+    else
+    {
+      for(int i=0; i<imageListNames.length;i++)
+      {
+        oldImages=oldImages+","+imageListNames[i];
+      }
+      for (int i = 0; i < oldImagesArray.length; i++) {
+        oldImagesList.add(oldImagesArray[i]);
+      }
+    }
+    for (String imageName : imageListNames) {
+      if (!oldImagesList.contains(imageName)) {
+        newImagesList.add(imageName);
+      }
+    }
+    for(String newImage: newImagesList)
+    {
+      oldImages = oldImages + "," + newImage;
+    }
+    editor.putString("imageList",oldImages);
+    int i=0;
+    Log.d("newI",Integer.toString(newImagesList.size()));
+    File[] newImageList = new File[newImagesList.size()];
+    for(String newImage:newImagesList)
+    {
+      newImageList[i] = new File(imageList.toString() +"/"+ newImage);
+      i++;
+    }
+    TextView textView2 = (TextView) findViewById(R.id.textView3);
+    textView2.setText(Integer.toString(newImagesList.size()));
+    editor.commit();
+    return newImageList;
   }
 
   protected void writeImages(Bitmap image,String imageName)
@@ -98,17 +153,16 @@ public class MainActivity extends AppCompatActivity
 
   protected void encode()
   {
-    File[] imageList = readImages();
-    File imageFile = imageList[0];
-    Bitmap bitmap=null;
-    try
-    {
-      bitmap = new ImageZipper(MainActivity.this).compressToBitmap(imageFile);
+    File[] imageList = newImages();
+    if (imageList.length > 0) {
+      File imageFile = imageList[0];
+      Bitmap bitmap = null;
+      try {
+        bitmap = new ImageZipper(MainActivity.this).compressToBitmap(imageFile);
+      } catch (IOException e) {
+        System.out.println(e.getLocalizedMessage());
+      }
+      writeImages(bitmap, imageFile.getName());
     }
-    catch (IOException e)
-    {
-      System.out.println(e.getLocalizedMessage());}
-      writeImages(bitmap,imageFile.getName());
-
   }
 }
