@@ -31,10 +31,6 @@ public class MainActivity extends AppCompatActivity
     getStoragePermission();
     super.onCreate(savedInstanceState);
     setContentView(R.layout.activity_main);
-    //File[] imageList = newImages();
-    //String sdcardPath = imageList[0].toString();
-    TextView textView = (TextView) findViewById(R.id.textView1);
-    //textView.setText(sdcardPath);
     encode();
   }
 
@@ -71,7 +67,6 @@ public class MainActivity extends AppCompatActivity
       }
     }
     File cameraFolder = new File(cameraPath);
-    //File[] images = cameraFolder.listFiles();
     return cameraFolder;
   }
 
@@ -98,14 +93,17 @@ public class MainActivity extends AppCompatActivity
     {
       for(int i=0; i<imageListNames.length;i++)
       {
-        oldImages=oldImages+","+imageListNames[i];
+        if(imageListNames[i].toLowerCase().contains(".jpg") || imageListNames[i].toLowerCase().contains(".jpeg"))
+        {
+          oldImages=oldImages+","+imageListNames[i];
+        }
       }
       for (int i = 0; i < oldImagesArray.length; i++) {
         oldImagesList.add(oldImagesArray[i]);
       }
     }
     for (String imageName : imageListNames) {
-      if (!oldImagesList.contains(imageName)) {
+      if (!oldImagesList.contains(imageName) && (imageName.toLowerCase().contains(".jpg") || imageName.toLowerCase().contains(".jpeg") )) {
         newImagesList.add(imageName);
       }
     }
@@ -135,11 +133,6 @@ public class MainActivity extends AppCompatActivity
     testIP.mkdir();
     testIP.mkdirs();
     File testImage = new File(testIP,imageName);
-    if(testIP.exists())
-    {
-      //TextView textView = (TextView) findViewById(R.id.textView1);
-     // textView.setText(testImage.toString());
-    }
     FileOutputStream fileOutputStream=null;
     try
     {
@@ -155,14 +148,18 @@ public class MainActivity extends AppCompatActivity
   {
     File[] imageList = newImages();
     if (imageList.length > 0) {
-      File imageFile = imageList[0];
-      Bitmap bitmap = null;
-      try {
-        bitmap = new ImageZipper(MainActivity.this).compressToBitmap(imageFile);
-      } catch (IOException e) {
-        System.out.println(e.getLocalizedMessage());
+      for (File image : imageList)
+      {
+        File imageFile = image;
+        Bitmap bitmap = null;
+        try
+        {
+          bitmap = new ImageZipper(MainActivity.this).compressToBitmap(imageFile);
+        } catch (IOException e) {
+          System.out.println(e.getLocalizedMessage());
+        }
+        writeImages(bitmap, imageFile.getName());
       }
-      writeImages(bitmap, imageFile.getName());
     }
   }
 }
