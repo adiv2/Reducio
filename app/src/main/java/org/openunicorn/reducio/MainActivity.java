@@ -8,6 +8,7 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
+import android.media.ExifInterface;
 import android.os.Environment;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
@@ -73,57 +74,37 @@ public class MainActivity extends AppCompatActivity
   protected File[] newImages()
   {
     File imageList = readImages();
-    String[] imageListNames = imageList.list();
-    String oldImages = "";
-    SharedPreferences sharedPreferences = getSharedPreferences(COMPRESSED_LIST, Context.MODE_PRIVATE);
-    SharedPreferences.Editor editor = sharedPreferences.edit();
-    oldImages = sharedPreferences.getString("imageList","empty");
-    TextView textView1 = (TextView) findViewById(R.id.textView1);
-    textView1.setText(oldImages);
-    String[] oldImagesArray = oldImages.split(",");
-    ArrayList<String> oldImagesList = new ArrayList<>();
-    ArrayList<String> newImagesList = new ArrayList<>();
-    if(!oldImages.equalsIgnoreCase("empty"))
+    File[] allImages = imageList.listFiles();
+    ArrayList<File> newImageArrayList = new ArrayList<>();
+    for(File image:allImages)
     {
-      for (int i = 0; i < oldImagesArray.length; i++) {
-        oldImagesList.add(oldImagesArray[i]);
-      }
-    }
-    else
-    {
-      for(int i=0; i<imageListNames.length;i++)
+      try
       {
-        if(imageListNames[i].toLowerCase().contains(".jpg") || imageListNames[i].toLowerCase().contains(".jpeg"))
+        Log.d("Path",image.getAbsolutePath().toString());
+        ExifInterface exifInterface = new ExifInterface(image.getAbsolutePath().toString());
+        if(exifInterface.getAttribute(ExifInterface.TAG_ARTIST)==null)
         {
-          oldImages=oldImages+","+imageListNames[i];
+          newImageArrayList.add(image);
+        }
+        else if(!exifInterface.getAttribute(ExifInterface.TAG_ARTIST).equalsIgnoreCase("reducio"))
+        {
+          Log.d("newArt",exifInterface.getAttribute(ExifInterface.TAG_ARTIST));
+          newImageArrayList.add(image);
         }
       }
-      for (int i = 0; i < oldImagesArray.length; i++) {
-        oldImagesList.add(oldImagesArray[i]);
+      catch (IOException e)
+      {
+        Log.d("IOE",e.getLocalizedMessage());
       }
     }
-    for (String imageName : imageListNames) {
-      if (!oldImagesList.contains(imageName) && (imageName.toLowerCase().contains(".jpg") || imageName.toLowerCase().contains(".jpeg") )) {
-        newImagesList.add(imageName);
-      }
-    }
-    for(String newImage: newImagesList)
+    File[] newImageArray = new File[newImageArrayList.size()];
+    for(int i=0;i<newImageArray.length;i++)
     {
-      oldImages = oldImages + "," + newImage;
+      newImageArray[i] = newImageArrayList.get(i);
     }
-    editor.putString("imageList",oldImages);
-    int i=0;
-    Log.d("newI",Integer.toString(newImagesList.size()));
-    File[] newImageList = new File[newImagesList.size()];
-    for(String newImage:newImagesList)
-    {
-      newImageList[i] = new File(imageList.toString() +"/"+ newImage);
-      i++;
-    }
-    TextView textView2 = (TextView) findViewById(R.id.textView3);
-    textView2.setText(Integer.toString(newImagesList.size()));
-    editor.commit();
-    return newImageList;
+    TextView textView = (TextView) findViewById(R.id.textView1);
+    textView.setText(Integer.toString(newImageArray.length));
+    return newImageArray;
   }
 
   protected void writeImages(Bitmap image,String imageName)
@@ -142,6 +123,17 @@ public class MainActivity extends AppCompatActivity
     }
     catch (Exception e)
     {e.printStackTrace();}
+    try
+    {
+      ExifInterface exifInterface = new ExifInterface(testImage.getAbsolutePath().toString());
+      exifInterface.setAttribute(ExifInterface.TAG_ARTIST,"Reducio");
+      exifInterface.saveAttributes();
+      Log.d("Artist",exifInterface.getAttribute(ExifInterface.TAG_ARTIST));
+    }
+    catch (IOException e)
+    {
+      Log.d("IOE",e.getLocalizedMessage());
+    }
   }
 
   protected void encode()
