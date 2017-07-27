@@ -154,6 +154,16 @@ public class MainActivity extends AppCompatActivity
     }
     catch (Exception e)
     {e.printStackTrace();}
+    try
+    {
+      ExifInterface exifInterface = new ExifInterface(imageName);
+      exifInterface.setAttribute(ExifInterface.TAG_DATETIME,imageMetaMap.get(imageName).getAttribute(ExifInterface.TAG_DATETIME));
+      exifInterface.saveAttributes();
+    }
+    catch (IOException e)
+    {
+      Log.d("meta",e.getLocalizedMessage());
+    }
   }
 
   protected void encode()
@@ -171,16 +181,6 @@ public class MainActivity extends AppCompatActivity
           System.out.println(e.getLocalizedMessage());
         }
         writeImages(bitmap, imageFile.getName());
-        try
-        {
-          ExifInterface exifInterface = new ExifInterface(imageFile.getName());
-          exifInterface.setAttribute(ExifInterface.TAG_DATETIME,imageMetaMap.get(imageFile.getName()).getAttribute(ExifInterface.TAG_DATETIME));
-          exifInterface.saveAttributes();
-        }
-        catch (IOException e)
-        {
-          Log.d("meta",e.getLocalizedMessage());
-        }
       }
     }
   }
